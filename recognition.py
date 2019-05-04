@@ -22,15 +22,15 @@ cristianrestrepo_image = face_recognition.load_image_file("img/cristianrestrepo.
 cristianrestrepo_face_encoding = face_recognition.face_encodings(cristianrestrepo_image)[0]
 
 # Load a sample picture and learn how to recognize it.
-andresdias_image = face_recognition.load_image_file("img/andresdias.jpg")
+andresdias_image = face_recognition.load_image_file("img/andresdias.jpeg")
 andresdias_face_encoding = face_recognition.face_encodings(andresdias_image)[0]
 
 # Load a sample picture and learn how to recognize it.
-leidyrondon_image = face_recognition.load_image_file("img/leidyrondon.jpg")
+leidyrondon_image = face_recognition.load_image_file("img/leidyrondon.jpeg")
 leidyrondon_face_encoding = face_recognition.face_encodings(leidyrondon_image)[0]
 
 # Load a sample picture and learn how to recognize it.
-sebastiancastro_image = face_recognition.load_image_file("img/sebastiancastro.jpg")
+sebastiancastro_image = face_recognition.load_image_file("img/sebastiancastro.jpeg")
 sebastiancastro_face_encoding = face_recognition.face_encodings(sebastiancastro_image)[0]
 
 # Load a sample picture and learn how to recognize it.
