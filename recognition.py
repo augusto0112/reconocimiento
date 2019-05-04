@@ -18,25 +18,43 @@ from pprint import pprint
 video_capture = cv2.VideoCapture(0)
 
 # Load a sample picture and learn how to recognize it.
-cristianrestrepo_image = face_recognition.load_image_file("cristianrestrepo.jpg")
+cristianrestrepo_image = face_recognition.load_image_file("img/cristianrestrepo.jpg")
 cristianrestrepo_face_encoding = face_recognition.face_encodings(cristianrestrepo_image)[0]
 
 # Load a sample picture and learn how to recognize it.
-obama_image = face_recognition.load_image_file("obama.jpg")
+andresdias_image = face_recognition.load_image_file("img/andresdias.jpg")
+andresdias_face_encoding = face_recognition.face_encodings(andresdias_image)[0]
+
+# Load a sample picture and learn how to recognize it.
+leidyrondon_image = face_recognition.load_image_file("img/leidyrondon.jpg")
+leidyrondon_face_encoding = face_recognition.face_encodings(leidyrondon_image)[0]
+
+# Load a sample picture and learn how to recognize it.
+sebastiancastro_image = face_recognition.load_image_file("img/sebastiancastro.jpg")
+sebastiancastro_face_encoding = face_recognition.face_encodings(sebastiancastro_image)[0]
+
+# Load a sample picture and learn how to recognize it.
+obama_image = face_recognition.load_image_file("img/obama.jpg")
 obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
 
 # Load a second sample picture and learn how to recognize it.
-biden_image = face_recognition.load_image_file("biden.jpg")
+biden_image = face_recognition.load_image_file("img/biden.jpg")
 biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
 
 # Create arrays of known face encodings and their names
 known_face_encodings = [
     cristianrestrepo_face_encoding,
+    andresdias_face_encoding,
+    leidyrondon_face_encoding,
+    sebastiancastro_face_encoding,
     obama_face_encoding,
     biden_face_encoding
 ]
 known_face_names = [
     "Cristian Restrepo",
+    "Andres Díaz",
+    "Leidy Rondon",
+    "Sebastian Castro",
     "Barack Obama",
     "Joe Biden"
 ]
