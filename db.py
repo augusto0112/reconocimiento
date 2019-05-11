@@ -20,3 +20,4 @@ habitante = db["habitante"].find( {"cedula":1107093927} )
 #Bucar e imprimir
 for busqueda in habitante:
     pprint(busqueda)
+    #pprint(busqueda["fechaRegistro"])
