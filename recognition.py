@@ -15,11 +15,17 @@ from pprint import pprint
 # specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
 
 # Get a reference to webcam #0 (the default one)
+#####Nikon DSC D7100                usb:001,008
+
 video_capture = cv2.VideoCapture(0)
 
 # Load a sample picture and learn how to recognize it.
 cristianrestrepo_image = face_recognition.load_image_file("img/cristianrestrepo.jpg")
 cristianrestrepo_face_encoding = face_recognition.face_encodings(cristianrestrepo_image)[0]
+
+# Load a sample picture and learn how to recognize it.
+jhoanrestrepo_image = face_recognition.load_image_file("img/jhoanrestrepo.jpeg")
+jhoanrestrepo_face_encoding = face_recognition.face_encodings(jhoanrestrepo_image)[0]
 
 # Load a sample picture and learn how to recognize it.
 andresdias_image = face_recognition.load_image_file("img/andresdias.jpeg")
@@ -44,6 +50,7 @@ biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
 # Create arrays of known face encodings and their names
 known_face_encodings = [
     cristianrestrepo_face_encoding,
+    jhoanrestrepo_face_encoding,
     andresdias_face_encoding,
     leidyrondon_face_encoding,
     sebastiancastro_face_encoding,
@@ -52,6 +59,7 @@ known_face_encodings = [
 ]
 known_face_names = [
     "Cristian Restrepo",
+    "Jhoan Restrepo",
     "Andres Díaz",
     "Leidy Rondon",
     "Sebastian Castro",
@@ -85,7 +93,7 @@ while True:
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
             matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
+            name = "Desconocido"
 
             # # If a match was found in known_face_encodings, just use the first one.
             # if True in matches:

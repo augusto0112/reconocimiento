@@ -1,164 +1,106 @@
-##import cv2
-##import numpy as np
-##cap = cv2.VideoCapture(1)
-##while True:
-##    ret,img=cap.read()
-##    cv2.imshow('video output',img)
-##    k=cv2.waitKey(10)& 0xff
-##    if k==27:
-##        break
-##cap.release()
-##cv2.destroyAllWindows()
-
+import sys
 import os
-import subprocess
-import time
-import Tkinter,tkFileDialog
-from Tkinter import *
-from tkFileDialog import askopenfilename
-import ttk
-import tkMessageBox
-import warnings
+import cv2
+import numpy as np
+import glob
+import caffe
+import feature_config as config
+import skimage.transform
+import logging
 
-global entrybox
-global kwargs
-global pathvals
+TARGET_IMG_SIZE = 224
 
-warnings.filterwarnings("ignore")
 
-def getsettings():
-    global pathvals
-    pathvals = []
-    with open("PATH.INI", 'r') as f:
-        for line in f:
-            pathvals.append(line.strip())
+def trim_image(img, resnet_mean):
+    h, w, c = img.shape
+    if c != 3:
+        raise Exception('There are gray scale image in data.')
 
-def takeone():
-    result = tkMessageBox.askquestion("Take a Picture?", "Take a Picture?", icon='question')
-    if result == 'yes':
-        return True
+    if h < w:
+        w = (w * 256) / h
+        h = 256
     else:
-        return False
+        h = (h * 256) / w
+        w = 256
+    resized_img = skimage.transform.resize(img, (h, w), preserve_range=True)
+    cropped_img = resized_img[h // 2 - 112:h // 2 + 112, w // 2 - 112:w // 2 +
+                              112, :]
+    transposed_img = np.swapaxes(np.swapaxes(cropped_img, 1, 2), 0, 1)
+    ivec = transposed_img - resnet_mean
+    return ivec[np.newaxis].astype('float32')
 
 
-def takeanother():
-    result = tkMessageBox.askquestion("Take Another Picture?", "Take Another Picture?", icon='question')
-    if result == 'yes':
-        return True
-    else:
-        return False
+def load_videos(video_file):
+    # print "load_videos"
+    capture = cv2.VideoCapture(video_file)
 
-def camera(serialnumber = None, count = 1, timestmp = ""):
-    try:
-        status = ""
-        loc = str(pathvals[0])+"\\"
-        os.chdir(loc)
-        fldloc = str(pathvals[1])
-        cmd = "CameraControlCmd.exe /filename C:\\test\\test.jpg /capture"
-        cmd = cmd.replace('C:\\test', fldloc)
-        nwfile = str(serialnumber)+"_"+timestmp+"_"+str(count)+".jpg"
-        cmd = cmd.replace('test.jpg', nwfile)
-        r = subprocess.check_output(cmd, shell=True)
-        #If any issues occur IE focus problems an Error message will be returned
-        if "Error" in r or "No connected device was found !" in r or r.count('connected') > 1:
-            #Display a message is an issue occurs
-            tkMessageBox.showinfo(title="OH NO!!!", message="Problem With Camera!!! "+r)
-            status = "Error"
-        else:
-            status = "Success"
-        return status
-    except:
-        status = "Error"
-        return status
+    read_flag, frame = capture.read()
+    vid_frames = []
+    i = 1
+    # print read_flag
+
+    while (read_flag):
+        # print i
+        if i % 10 == 0:
+            vid_frames.append(frame)
+            #                print frame.shape
+        read_flag, frame = capture.read()
+        i += 1
+    vid_frames = np.asarray(vid_frames, dtype='uint8')[:-1]
+    # print 'vid shape'
+    # print vid_frames.shape
+    capture.release()
+    print(i)
+    return vid_frames
 
 
-def camera_stat():
-    try:
-        status = ""
-        loc = str(pathvals[0])+"\\"
-        os.chdir(loc)
-        #Get Camera Status using Verbose if camera not connected no device found message will be returned
-        r = subprocess.check_output("CameraControlCmd.exe /verbose", shell=True)
-        if "No connected device was found !" in r or r.count('connected') > 1:
-            #Display a message is an issue occurs
-            tkMessageBox.showinfo(title="OH NO!!!", message="Problem With Camera!!! "+r)
-            return False
-        else:
-            return True
-    except:
-        return False
+def compute_features(net, frames, resnet_mean):
+    # print 'compute'
+    feats = []
+    i = 0
+    for img in frames:
+        # print i
+        i += 1
+        _img = trim_image(img, resnet_mean)
+        net.blobs['data'].data[:] = _img
+        net.forward()
+
+        feat_pool5 = net.blobs[
+            config.EXTRACT_LAYER_POOL5].data
+        feat_pool5 = feat_pool5.flatten()
+        feats.append(feat_pool5)
+    # print 'compute done'
+    return np.asarray(feats, dtype='float32')
 
 
+def extract_features():
+    logging.basicConfig(level=logging.DEBUG, filename='feature_msvd.log', filemode='w')
+    pool5_dir = '../feature/pool5/'
+    caffe.set_mode_gpu()
+    caffe.set_device(config.GPU_ID)
 
-def close_window():
-    try:
-        root.destroy()
-        sys.exit(0)
-    except:
-        pass
+    net = caffe.Net('/home/chenjie/feature/resnet/Resnet/ResNet-152-deploy.prototxt',
+                    '/home/chenjie/feature/resnet/Resnet/ResNet-152-model.caffemodel', caffe.TEST)
 
-def x_override():
-    pass
+    # mean substraction
+    blob = caffe.proto.caffe_pb2.BlobProto()
+    data = open('/home/chenjie/feature/resnet/Resnet/ResNet_mean.binaryproto', 'rb').read()
+    blob.ParseFromString(data)
+    resnet_mean = np.array(caffe.io.blobproto_to_array(blob))[
+        0]
 
-def anotherpic(stat):
-    try:
-        global kwargs
-        count = kwargs.get('count')
-        if stat == "Success":
-            if (takeanother()):
-                count +=1
-                kwargs["count"]=count
-                return True
-            else:
-                return False
-        else:
-            return False
-    except:
-        return False
+    videolistfile = 'videofilepath.txt'
+    fp = open(videolistfile)
+    i = 1
+    for video_name in fp:
+        i += 1
+        video_name = video_name.strip()
+        vid_name = video_name.split('/')[-1][:-4]
+        frames = load_videos(video_name)
+        logging.info('%d,%d' % (i, frames.shape[0]))
+        res_feat_pool5 = compute_features(net, frames, resnet_mean)
+        np.save(pool5_dir + vid_name, res_feat_pool5)
+    print("DONE")
 
-def main():
-    global entrybox
-    global kwargs
-    count = 1
-    sn=entrybox.get()
-    tmstp = str(int(time.time()))
-    if (len(sn) > 0):
-        entrybox.delete(0, 'end')
-        if takeone() and camera_stat():
-            kwargs = {"serialnumber":sn,"count":count,"timestmp":tmstp}
-            while True:
-                try:
-                    if not anotherpic(camera(**kwargs)):
-                        break
-                except:
-                    tkMessageBox.showinfo(title="OH NO!!!", message="Problem With Camera!!!")
-                    break
-
-#Get folder path values from INI file
-getsettings()
-#Main GUI
-root = Tkinter.Tk()
-# this removes the maximize button
-root.resizable(width=False, height=False)
-#Removes the boarder
-#root.overrideredirect(1)
-root.title("MCA Visual Record")
-root["padx"] = 200
-root["pady"] = 60
-
-W = Label(root, text="Please Enter a Serial Number")
-entrybox=Entry(root)
-entrybox.insert(0,"")
-entrybox.select_range(0,END)
-entrybox.focus_set()
-entrybox.pack()
-B = Tkinter.Button(root, text ="Start", command = main)
-C = Tkinter.Button(root, text="Close", command=close_window)
-W.pack()
-B.pack()
-C.pack()
-#root.bind('<Return>', main)
-#Overrides the X close button function has to be above
-#this line to see what to do, no prototype
-root.protocol('WM_DELETE_WINDOW', x_override)
-root.mainloop()
+if __name__ == '__main__':
+    extract_features()
