@@ -4,6 +4,10 @@ import numpy as np
 import pymongo
 from pymongo import MongoClient
 from pprint import pprint
+import dlib
+import dlib.cuda as cuda
+
+cuda.set_device(0)
 
 # This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
 # other example, but it includes some basic performance tweaks to make things run a lot faster:
@@ -17,11 +21,15 @@ from pprint import pprint
 # Get a reference to webcam #0 (the default one)
 #####Nikon DSC D7100                usb:001,008
 
-video_capture = cv2.VideoCapture(0)
+video_capture = cv2.VideoCapture("/dev/video0")
 
 # Load a sample picture and learn how to recognize it.
 cristianrestrepo_image = face_recognition.load_image_file("img/cristianrestrepo.jpg")
 cristianrestrepo_face_encoding = face_recognition.face_encodings(cristianrestrepo_image)[0]
+
+# Load a sample picture and learn how to recognize it.
+luzlenis_image = face_recognition.load_image_file("img/luzlenis.jpg")
+luzlenis_face_encoding = face_recognition.face_encodings(luzlenis_image)[0]
 
 # Load a sample picture and learn how to recognize it.
 jhoanrestrepo_image = face_recognition.load_image_file("img/jhoanrestrepo.jpeg")
@@ -50,6 +58,7 @@ biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
 # Create arrays of known face encodings and their names
 known_face_encodings = [
     cristianrestrepo_face_encoding,
+    luzlenis_face_encoding,
     jhoanrestrepo_face_encoding,
     andresdias_face_encoding,
     leidyrondon_face_encoding,
@@ -59,8 +68,9 @@ known_face_encodings = [
 ]
 known_face_names = [
     "Cristian Restrepo",
+    "Luz Lenis",
     "Jhoan Restrepo",
-    "Andres Díaz",
+    "Andres Diaz",
     "Leidy Rondon",
     "Sebastian Castro",
     "Barack Obama",
@@ -77,7 +87,7 @@ while True:
     # Grab a single frame of video
     ret, frame = video_capture.read()
 
-    # Resize frame of video to 1/4 size for faster face recognition processing
+    # Resize frame of video to 1/4 size errotfor faster face recognition processing
     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
